@@ -2,6 +2,10 @@ import { useState, useMemo } from "react";
 import { t } from "ttag";
 import _ from "underscore";
 
+import {
+  useLoadParameterValuesQuery,
+  useSearchParameterValuesQuery,
+} from "metabase/api";
 import NumericInput from "metabase/core/components/NumericInput";
 import CS from "metabase/css/core/index.css";
 import { parseNumberValue } from "metabase/lib/number";
@@ -13,7 +17,7 @@ import {
   TokenFieldWrapper,
 } from "metabase/parameters/components/widgets/Widget.styled";
 import { MultiAutocomplete } from "metabase/ui";
-import type { Parameter } from "metabase-types/api";
+import type { Parameter, ParameterValue } from "metabase-types/api";
 
 export type NumberInputWidgetProps = {
   value: number[] | undefined;
@@ -24,8 +28,43 @@ export type NumberInputWidgetProps = {
   autoFocus?: boolean;
   placeholder?: string;
   label?: string;
-  parameter?: Partial<Pick<Parameter, "required" | "default">>;
+  // parameter?: Partial<Pick<Parameter, "required" | "default">>;
+  parameter?: Parameter;
 };
+
+function useLoadParameterValues({
+  parameter,
+  query,
+}: {
+  parameter: Parameter | undefined;
+  query: string;
+}) {
+  const isSearch = parameter?.values_query_type === "search";
+
+  const values = useLoadParameterValuesQuery(
+    {
+      parameter: parameter!,
+    },
+    {
+      skip: !parameter || isSearch,
+    },
+  );
+
+  const searchValues = useSearchParameterValuesQuery(
+    {
+      parameter: parameter!,
+      query,
+    },
+    {
+      skip: !parameter || !isSearch || query === "",
+    },
+  );
+
+  if (isSearch) {
+    return searchValues;
+  }
+  return values;
+}
 
 export function NumberInputWidget({
   value,
@@ -36,9 +75,10 @@ export function NumberInputWidget({
   autoFocus,
   placeholder = t`Enter a number`,
   label,
-  parameter = {},
+  parameter,
 }: NumberInputWidgetProps) {
   const arrayValue = normalize(value);
+  const [query, setQuery] = useState<string>("");
   const [unsavedArrayValue, setUnsavedArrayValue] =
     useState<(number | undefined)[]>(arrayValue);
 
@@ -68,12 +108,28 @@ export function NumberInputWidget({
     [unsavedArrayValue],
   );
 
+  const { data } = useLoadParameterValues({
+    parameter,
+    query: query,
+  });
+
+  const options = data?.values
+    .map(getOption)
+    .filter((item): item is SelectItem => item !== null)
+    .filter(
+      // avoid rendering the label in the value tag, because this only
+      // works when the value has just been selected
+      item =>
+        !filteredUnsavedArrayValue.some(val => val?.toString() === item.value),
+    );
+
   return (
     <WidgetRoot className={className}>
       {label && <WidgetLabel>{label}</WidgetLabel>}
       {arity === "n" ? (
         <TokenFieldWrapper>
           <MultiAutocomplete
+            onSearchChange={setQuery}
             onChange={(values: string[]) =>
               setUnsavedArrayValue(
                 values.map(value => parseNumberValue(value) ?? undefined),
@@ -83,7 +139,7 @@ export function NumberInputWidget({
             placeholder={placeholder}
             shouldCreate={shouldCreate}
             autoFocus={autoFocus}
-            data={[]}
+            data={options ?? []}
           />
         </TokenFieldWrapper>
       ) : (
@@ -113,8 +169,8 @@ export function NumberInputWidget({
         <UpdateFilterButton
           value={value}
           unsavedValue={unsavedArrayValue}
-          defaultValue={parameter.default}
-          isValueRequired={parameter.required ?? false}
+          defaultValue={parameter?.default}
+          isValueRequired={parameter?.required ?? false}
           isValid={isValid}
           onClick={onClick}
         />
@@ -129,4 +185,21 @@ function normalize(value: number[] | undefined): (number | undefined)[] {
   } else {
     return [];
   }
+}
+
+type SelectItem = {
+  value: string;
+  label: string | undefined;
+};
+
+function getOption(entry: ParameterValue): SelectItem | null {
+  const tuple = Array.isArray(entry) ? entry : [entry];
+  const value = tuple[0]?.toString();
+  const label = tuple[1] ?? value;
+
+  if (!value) {
+    return null;
+  }
+
+  return { value, label };
 }
