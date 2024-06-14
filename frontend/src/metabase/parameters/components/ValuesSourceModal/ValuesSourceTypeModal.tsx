@@ -46,6 +46,7 @@ import {
 } from "./ValuesSourceTypeModal.styled";
 
 const NEW_LINE = "\n";
+const COMMA = ",";
 
 interface ModalOwnProps {
   parameter: UiParameter;
@@ -421,7 +422,8 @@ const getStaticValues = (value: string) => {
   return value
     .split(NEW_LINE)
     .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .filter(line => line.length > 0)
+    .map(line => line.split(COMMA));
 };
 
 const getFieldByReference = (fields: Field[], fieldReference?: unknown[]) => {
