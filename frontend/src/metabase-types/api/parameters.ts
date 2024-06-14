@@ -65,7 +65,7 @@ export type ValuesQueryType = "list" | "search" | "none";
 export type ValuesSourceType = null | "card" | "static-list";
 
 export interface ValuesSourceConfig {
-  values?: string[];
+  values?: string[] | ParameterValue;
   card_id?: CardId;
   value_field?: unknown[];
 }
@@ -91,7 +91,7 @@ export type StructuredParameterDimensionTarget = [
 ];
 
 export type ParameterValueOrArray = string | number | Array<any>;
-export type ParameterValue = [RowValue];
+export type ParameterValue = [RowValue] | [RowValue, string];
 
 export type ParameterValuesMap = Record<
   ParameterId,
