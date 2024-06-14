@@ -1,11 +1,8 @@
 (ns metabase.query-processor.middleware.cache
   "Middleware that returns cached results for queries when applicable.
 
-  If caching is enabled (`enable-query-caching` is `true`) cached results will be returned for Cards if possible.
-  There's a global default TTL defined by the setting `query-caching-default-ttl`, but individual Cards can override
-  this value with custom TTLs with a value for `:cache_ttl`.
-
-  For all other queries, caching is skipped.
+  If there is a configured cache strategy, cached results will be returned for Cards if possible. For all other
+  queries, caching is skipped.
 
   The default backend is `db`, which uses the application database; this value can be changed by setting the env var
   `MB_QP_CACHE_BACKEND`. Refer to [[metabase.query-processor.middleware.cache-backend.interface]] for more details
@@ -226,7 +223,7 @@
   "Middleware for caching results of a query if applicable.
   In order for a query to be eligible for caching:
 
-     *  Caching (the `enable-query-caching` Setting) must be enabled
+     *  Caching must be enabled (configured in `cache_config` table)
      *  The query must pass a `:cache-strategy` value
      *  The query must already be permissions-checked. Since the cache bypasses the normal
         query processor pipeline, the ad-hoc permissions-checking middleware isn't applied for cached results.

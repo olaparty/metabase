@@ -261,13 +261,6 @@
   :export?    true
   :audit      :getter)
 
-(defsetting enable-query-caching
-  (deferred-tru "Enabling caching will save the results of queries that take a long time to run.")
-  :type       :boolean
-  :default    false
-  :visibility :authenticated
-  :audit      :getter)
-
 (defsetting persisted-models-enabled
   (deferred-tru "Allow persisting models into the source database.")
   :type       :boolean
