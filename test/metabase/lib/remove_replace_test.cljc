@@ -1042,6 +1042,19 @@
       (is (empty? (lib/aggregations result)))
       (is (= (lib/breakouts query) (lib/breakouts result))))))
 
+(deftest ^:parallel removing-last-aggregation-brings-back-all-fields-on-joins
+  (testing "Removing the last aggregation puts :fields :all on join clauses"
+    (let [base   (-> lib.tu/venues-query
+                     (lib/join (lib/join-clause (meta/table-metadata :products)
+                                                [(lib/= (meta/field-metadata :orders :product-id)
+                                                        (meta/field-metadata :products :id))])))
+          query  (lib/aggregate base (lib/count))
+          result (lib/remove-clause query (first (lib/aggregations query)))]
+      (is (= :all (-> base :stages first :joins first :fields)))
+      (is (= :all (-> result :stages first :joins first :fields)))
+      (is (=? (map :name (lib/returned-columns base))
+              (map :name (lib/returned-columns result)))))))
+
 (deftest ^:parallel simple-tweak-expression-test
   (let [table (lib/query meta/metadata-provider (meta/table-metadata :orders))
         base (lib/expression table "Tax Rate" (lib// (meta/field-metadata :orders :tax)
