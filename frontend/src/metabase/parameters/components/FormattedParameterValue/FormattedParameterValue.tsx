@@ -1,3 +1,4 @@
+import { useLoadParameterValuesQuery } from "metabase/api";
 import ParameterFieldWidgetValue from "metabase/parameters/components/widgets/ParameterFieldWidget/ParameterFieldWidgetValue/ParameterFieldWidgetValue";
 import { formatParameterValue } from "metabase/parameters/utils/formatting";
 import type { UiParameter } from "metabase-lib/v1/parameters/types";
@@ -8,6 +9,7 @@ import {
 } from "metabase-lib/v1/parameters/utils/parameter-fields";
 import { isDateParameter } from "metabase-lib/v1/parameters/utils/parameter-type";
 import { parameterHasNoDisplayValue } from "metabase-lib/v1/parameters/utils/parameter-values";
+import type { Parameter } from "metabase-types/api";
 
 type FormattedParameterValueProps = {
   parameter: UiParameter;
@@ -20,9 +22,28 @@ function FormattedParameterValue({
   value,
   placeholder,
 }: FormattedParameterValueProps) {
+  const { data, isLoading } = useLoadParameterValuesQuery(
+    { parameter: parameter as Parameter },
+    {
+      skip:
+        !parameter ||
+        parameterHasNoDisplayValue(value) ||
+        Boolean(parameter.values_source_config?.values) ||
+        (Array.isArray(value) && value.length !== 1),
+    },
+  );
+
+  if (isLoading) {
+    return null;
+  }
+
   if (parameterHasNoDisplayValue(value)) {
     return placeholder;
   }
+
+  const first = Array.isArray(value) ? value[0] : value;
+  const values = parameter?.values_source_config?.values ?? data?.values;
+  const displayValue = values?.find(v => v[0] === first?.toString())?.[1];
 
   if (
     isFieldFilterUiParameter(parameter) &&
@@ -30,7 +51,11 @@ function FormattedParameterValue({
     !isDateParameter(parameter)
   ) {
     return (
-      <ParameterFieldWidgetValue fields={getFields(parameter)} value={value} />
+      <ParameterFieldWidgetValue
+        fields={getFields(parameter)}
+        value={value}
+        displayValue={displayValue}
+      />
     );
   }
 
