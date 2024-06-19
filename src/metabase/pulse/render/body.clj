@@ -353,7 +353,7 @@
   [legend-entries]
   (letfn [(table-fn [entries]
             (into [:table {:style (style/style {:color       "#4C5773"
-                                                :font-family "Lato, sans-serif"
+                                                :font-family "Noto Sans CJK SC, sans-serif"
                                                 :font-size   "24px"
                                                 :font-weight "bold"
                                                 :box-sizing  "border-box"

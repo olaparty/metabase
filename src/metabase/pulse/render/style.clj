@@ -73,7 +73,7 @@
 (defn font-style
   "Font family to use in rendered Pulses."
   []
-  {:font-family "Lato, \"Helvetica Neue\", Helvetica, Arial, sans-serif"})
+  {:font-family "\"Noto Sans CJK SC\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"})
 
 (defn section-style
   "CSS style for a Pulse section."
